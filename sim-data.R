@@ -11,12 +11,12 @@ require(mvtnorm)
 
 source("functions.R")
 
-J.pa = 3  #number of repeated surveys
+J.so = 3  #number of repeated surveys
 minrecipCondNum = 1e-6
 factor = 4
-beta.param = c(log(8000), 0.5)
-alpha.param = c(-1.0,-1.0) #po
-alpha.pa = c(0,-1.5) #probability of detection for repeated surveys
+beta.soram = c(log(8000), 0.5)
+alpha.soram = c(-1.0,-1.0) #po
+alpha.so = c(0,-1.5) #probability of detection for repeated surveys
 
 # Define a rectangular region S
 s.xmin = -1
@@ -89,12 +89,12 @@ W = cbind(rep(1, ncell(s)), values(s)[,'w'])
 
 # ... compute expected limiting density of individuals and true detection probabilities over discretization of region S
 temp = raster(s)
-values(temp) = exp(X %*% beta.param)
+values(temp) = exp(X %*% beta.soram)
 names(temp) = 'lambda'
 s = addLayer(s, temp)
 
 temp = raster(s)
-values(temp) = expit(W %*% alpha.param)
+values(temp) = expit(W %*% alpha.soram)
 names(temp) = 'pTrue'
 s = addLayer(s, temp)
 
@@ -128,8 +128,8 @@ y.ipp = ifelse(runif(length(y.ipp),0,1)<0.7,0,y.ipp)
 
 # ----------------------------------------------------------------------------------------------------------
 
-ind.po = (y.ipp == 1)
-loc.po = loc.ipp[ind.po, ]
+ind.pb = (y.ipp == 1)
+loc.pb = loc.ipp[ind.pb, ]
 
 
 # ... analyze simulated presence-only data
@@ -149,11 +149,11 @@ X.back = cbind(rep(1, ncell(sgrid)), sgrid.xcov)
 W.back = cbind(rep(1, ncell(sgrid)), sgrid.wcov)
 
 
-X.po = X[ind.hpp[ind.ipp][ind.po], ]  # thinned observations
-W.po = W[ind.hpp[ind.ipp][ind.po], ]  # thinned observations
+X.pb = X[ind.hpp[ind.ipp][ind.pb], ]  # thinned observations
+W.pb = W[ind.hpp[ind.ipp][ind.pb], ]  # thinned observations
 
-po.occupancy=X.po[,-1]
-po.detection=W.po[,-1]
+pb.occupancy=X.pb[,-1]
+pb.detection=W.pb[,-1]
 
 #simulate point-count data --------------------------------------------------------------------
 
@@ -178,7 +178,7 @@ abund = aggregate(subset(spop, 'presence'), fact=gridfact, fun=sum)
 
 
 
-abund=crop(abund, c(xleft,xright,ybottom,ytop))
+# abund=crop(abund, c(xleft,xright,ybottom,ytop))
 
 names(abund) = 'N'
 sgrid = addLayer(sgrid, abund)
@@ -197,37 +197,35 @@ sgrid.xcov = values(sgrid)[,'x']
 sgrid.wcov = values(sgrid)[,'w']
 sgrid.N = values(sgrid)[,'N']
 
-n.pa =200
-ind.pa = sample(1:ncell(sgrid), size=n.pa, replace=FALSE)  # simple random sample w/o replacement
-N.pa = values(sgrid)[,'N'][ind.pa]
-area.pa = rep(res(sgrid)[1]*res(sgrid)[2], length(N.pa))
-xcov.pa = values(sgrid)[,'x'][ind.pa]
-wcov.pa = values(sgrid)[,'w'][ind.pa]
-
-X.pa = cbind(rep(1,n.pa), xcov.pa)
-PA.occupancy=X.pa
+n.so =200
+ind.so = sample(1:ncell(sgrid), size=n.so, replace=FALSE)  # simple random sample w/o replacement
+N.so = values(sgrid)[,'N'][ind.so]
+area.so = rep(res(sgrid)[1]*res(sgrid)[2], length(N.so))
+xcov.so = values(sgrid)[,'x'][ind.so]
+wcov.so = values(sgrid)[,'w'][ind.so]
+so.occupancy=xcov.so
 
 
 # .... compute observed counts
 
 
-W.pa = array(dim=c(n.pa, J.pa, 2))
-W.pa[,,1] = 1
-W.pa[,,2] = matrix(rep(wcov.pa,J.pa), ncol=J.pa)
-Wmat.pa = cbind(rep(1,n.pa), wcov.pa)
-PA.detection=W.pa[,,2]
+W.so = array(dim=c(n.so, J.so, 2))
+W.so[,,1] = 1
+W.so[,,2] = matrix(rep(wcov.so,J.so), ncol=J.so)
+Wmat.so = cbind(rep(1,n.so), wcov.so)
+so.detection=W.so[,,2]
 
-pTrue.pa = matrix(nrow=n.pa, ncol=J.pa)
-y.pa = matrix(nrow=n.pa, ncol=J.pa)
-ocupancy.pa=ifelse(N.pa>1,1,N.pa)
-for (j in 1:J.pa) {
-	pTrue.pa[, j] = expit(as.matrix(W.pa[,j,], nrow=n.pa) %*% alpha.pa)
-	y.pa[, j] = rbinom(n.pa, size=ocupancy.pa, prob=pTrue.pa[, j])
+pTrue.so = matrix(nrow=n.so, ncol=J.so)
+y.so = matrix(nrow=n.so, ncol=J.so)
+ocupancy.so=ifelse(N.so>1,1,N.so)
+for (j in 1:J.so) {
+	pTrue.so[, j] = expit(as.matrix(W.so[,j,], nrow=n.so) %*% alpha.so)
+	y.so[, j] = rbinom(n.so, size=ocupancy.so, prob=pTrue.so[, j])
 }
 
 #change to PA ----------------------
-y.pa = ifelse(y.pa>1,1,y.pa) #simply replace all the values that're larger than one with ones
-y.pa.pres = y.pa[rowSums(y.pa)>=1,] #detection/non detection matrix for sites with detection in at least one of the surveys
+y.so = ifelse(y.so>1,1,y.so) #simply replace all the values that're larger than one with ones
+y.so.pres = y.so[rowSums(y.so)>=1,] #detection/non detection matrix for sites with detection in at least one of the surveys
 
-save(s.occupancy, s.detection, po.occupancy,po.detection, y.pa, PA.occupancy, PA.detection, file="data.rda")
+save(s.occupancy, s.detection, pb.occupancy,pb.detection, y.so, so.occupancy, so.detection, file="data.rda")
 
