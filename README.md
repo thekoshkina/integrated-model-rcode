@@ -11,7 +11,7 @@ POPA-function.r - Fitting PO PA and Integrated models the data. The data require
 	 - so.detection - matrix with covariates that effect detection in the locations of PA survey sites in 		each survey
 
 
-sim-data.r  - Simulated data generated. Simulates covariates $x$ and $w$, PO and PA datasets.  All the data is saved in a file data.rda
+sim-data.r  - Simulated data generated. Simulates covariates _x_ and _w_, PB and SO datasets.  All the data is saved in a file data.rda
 
 functions.r  - Utility and likelihood functions required for POPA-function.r
 
