@@ -22,7 +22,7 @@ predict=function(mymodel, X){
 
 
 #Function that fits IPP model
-po.ipp=function(X.po, W.po,X.back, W.back){
+pb.ipp=function(X.po, W.po,X.back, W.back){
 
 	beta.names=colnames(X.back)
 	beta.names[1]='beta0'
@@ -69,56 +69,56 @@ po.ipp=function(X.po, W.po,X.back, W.back){
 }
 
 #Function that fits Mackenzie model
-pa.mackenzie=function(X.pa,W.pa,y.pa){
+so.model=function(X.so,W.so,y.so){
 
-	beta.names=colnames(X.pa)
+	beta.names=colnames(X.so)
 	beta.names[1]='beta0'
 	# find sites with at least one detection
-	y.pa.pres = y.pa[rowSums(y.pa)>=1,] #detection/non detection matrix for sites with detection in at least one of the surveys
+	y.so.pres = y.so[rowSums(y.so)>=1,] #detection/non detection matrix for sites with detection in at least one of the surveys
 
 
-	alpha.names.pa=NULL
-	for (i in 1:(dim(W.pa)[3])){
-		alpha.names.pa[i]=paste("alpha",as.character(i-1), ".pa", sep="")}
+	alpha.names.so=NULL
+	for (i in 1:(dim(W.so)[3])){
+		alpha.names.so[i]=paste("alpha",as.character(i-1), ".so", sep="")}
 
-	par.names.pa=c(beta.names,alpha.names.pa)
+	par.names.so=c(beta.names,alpha.names.so)
 
 
 	#Analyzing Presence-Absence data ------------------------------------------------
 
 	minrecipCondNum = 1e-6
 
-	paramGuess = c(rep(.2, dim(X.pa)[2]), rep(.1, dim(W.pa)[3]))
-	fit.pa = NA
-	fit.pa = optim(par=paramGuess, fn=negLL.pa, method='BFGS', hessian=TRUE,y.pa.pres=y.pa.pres,y.pa=y.pa, X.pa=X.pa, W.pa=W.pa)
+	paramGuess = c(rep(.2, dim(X.so)[2]), rep(.1, dim(W.so)[3]))
+	fit.so = NA
+	fit.so = optim(par=paramGuess, fn=negLL.so, method='BFGS', hessian=TRUE,y.so.pres=y.so.pres,y.so=y.so, X.so=X.so, W.so=W.so)
 
 	# calculating se with Hessian matrix
-	recipCondNum.pa = NA
-	se.pa = rep(NA, length(fit.pa$par))
-	if (fit.pa$convergence==0) {
-		hess = fit.pa$hessian
+	recipCondNum.so = NA
+	se.so = rep(NA, length(fit.so$par))
+	if (fit.so$convergence==0) {
+		hess = fit.so$hessian
 		ev = eigen(hess)$values
-		recipCondNum.pa = ev[length(ev)]/ev[1]
-		if (recipCondNum.pa>minrecipCondNum) {
+		recipCondNum.so = ev[length(ev)]/ev[1]
+		if (recipCondNum.so>minrecipCondNum) {
 			vcv = chol2inv(chol(hess))
-			se.pa = sqrt(diag(vcv))
+			se.so = sqrt(diag(vcv))
 		}
 	}
 
 	#print PA results
-	tmp=data.frame(par.names.pa,fit.pa$par,se.pa)
+	tmp=data.frame(par.names.so,fit.so$par,se.so)
 	names(tmp)=c('Parameter name', 'Value', 'Standard error')
 	p=NULL
 	p$coefs=tmp
-	p$convergence=fit.pa$convergence
-	p$optim_message=fit.pa$message
-	p$value=fit.pa$value
+	p$convergence=fit.so$convergence
+	p$optim_message=fit.so$message
+	p$value=fit.so$value
 	return(p)
 
 }
 
 #Function that fits Combined data model
-poANDpa.combined=function(X.po, W.po,X.back, W.back,X.pa,W.pa,y.pa){
+pbso.integrated=function(X.po, W.po,X.back, W.back,X.so,W.so,y.so){
 
 	beta.names=colnames(X.back)
 	beta.names[1]='beta0'
@@ -126,40 +126,40 @@ poANDpa.combined=function(X.po, W.po,X.back, W.back,X.pa,W.pa,y.pa){
 	alpha.names=colnames(W.back)
 	alpha.names[1]='alpha0'
 
-	alpha.names.pa=NULL
-	for (i in 1:(dim(W.pa)[3])){
-		alpha.names.pa[i]=paste("alpha",as.character(i-1), ".pa", sep="")}
+	alpha.names.so=NULL
+	for (i in 1:(dim(W.so)[3])){
+		alpha.names.so[i]=paste("alpha",as.character(i-1), ".so", sep="")}
 
-	par.names=c(beta.names,	alpha.names, alpha.names.pa)
+	par.names=c(beta.names,	alpha.names, alpha.names.so)
 
-	y.pa.pres = y.pa[rowSums(y.pa)>=1,] #detection/non detection matrix for sites with detection in at least one of the surveys
+	y.so.pres = y.so[rowSums(y.so)>=1,] #detection/non detection matrix for sites with detection in at least one of the surveys
 	minrecipCondNum = 1e-6
-	paramGuess = c(rep(0, dim(X.po)[2]),rep(0, dim(W.po)[2]), rep(0, dim(W.pa)[3]))
-	fit.poANDpa = optim(par=paramGuess, fn=negLL.poANDpa, method='BFGS', hessian=TRUE
-											,y.pa.pres=y.pa.pres,y.pa=y.pa, X.po=X.po, W.po=W.po, X.back=X.back, W.back=W.back, X.pa=X.pa, W.pa=W.pa )
+	paramGuess = c(rep(0, dim(X.po)[2]),rep(0, dim(W.po)[2]), rep(0, dim(W.so)[3]))
+	fit.pbso = optim(par=paramGuess, fn=negLL.pbso, method='BFGS', hessian=TRUE
+											,y.so.pres=y.so.pres,y.so=y.so, X.po=X.po, W.po=W.po, X.back=X.back, W.back=W.back, X.so=X.so, W.so=W.so )
 
 	# calculating se with Hessian matrix
-	recipCondNum.poANDpa = NA
-	se.poANDpa = rep(NA, length(fit.poANDpa$par))
-	if (fit.poANDpa$convergence==0) {
-		hess = fit.poANDpa$hessian
+	recipCondNum.pbso = NA
+	se.pbso = rep(NA, length(fit.pbso$par))
+	if (fit.pbso$convergence==0) {
+		hess = fit.pbso$hessian
 		ev = eigen(hess)$values
-		recipCondNum.poANDpa = ev[length(ev)]/ev[1]
-		if (recipCondNum.poANDpa>minrecipCondNum) {
+		recipCondNum.pbso = ev[length(ev)]/ev[1]
+		if (recipCondNum.pbso>minrecipCondNum) {
 			vcv = chol2inv(chol(hess))
-			se.poANDpa = sqrt(diag(vcv))
+			se.pbso = sqrt(diag(vcv))
 		}
 	}
 
 	#print Combined Data results
-	tmp=data.frame(par.names,fit.poANDpa$par,se.poANDpa)
+	tmp=data.frame(par.names,fit.pbso$par,se.pbso)
 	names(tmp)=c('Parameter name', 'Value', 'Standard error')
 
 	p=NULL
 	p$coefs=tmp
-	p$convergence=fit.poANDpa$convergence
-	p$optim_message=fit.poANDpa$message
-	p$value=fit.poANDpa$value
+	p$convergence=fit.pbso$convergence
+	p$optim_message=fit.pbso$message
+	p$value=fit.pbso$value
 	return(p)
 }
 
@@ -282,58 +282,58 @@ FisherInfo.po = function(param) {
 }
 
 # negative loglikelihood function for Mackenzie model
-negLL.pa = function(param, y.pa.pres, y.pa,X.pa,W.pa) {
+negLL.so = function(param, y.so.pres, y.so,X.so,W.so) {
 
-	beta = param[1:dim(X.pa)[2]]
-	alpha = param[(dim(X.pa)[2]+1):(dim(X.pa)[2]+dim(W.pa)[3])]
+	beta = param[1:dim(X.so)[2]]
+	alpha = param[(dim(X.so)[2]+1):(dim(X.so)[2]+dim(W.so)[3])]
 
 	#temp --------------------------
-	area.pa=1
+	area.so=1
 
-	lambda.pa = exp(X.pa %*% beta)
-	psi =1- exp(-lambda.pa*area.pa)
+	lambda.so = exp(X.so %*% beta)
+	psi =1- exp(-lambda.so*area.so)
 
 
-	mean(lambda.pa)
+	mean(lambda.so)
 	mean(psi)
 
-	p.pa = matrix(nrow=dim(W.pa)[1], ncol=J.pa)
+	p.so = matrix(nrow=dim(W.so)[1], ncol=J.so)
 
-	for (j in 1:J.pa) {
-		p.pa[, j] = expit(as.matrix(W.pa[,j,], nrow=dim(W.pa)[1]) %*% alpha)
+	for (j in 1:J.so) {
+		p.so[, j] = expit(as.matrix(W.so[,j,], nrow=dim(W.so)[1]) %*% alpha)
 	}
 
 
 	# prob of detection for sites with presence at least in one of the surveys, and with no presence detected
-	p.pa.pres=p.pa[rowSums(y.pa)>=1,]
-	p.pa.non.pres=p.pa[rowSums(y.pa)==0,]
+	p.so.pres=p.so[rowSums(y.so)>=1,]
+	p.so.non.pres=p.so[rowSums(y.so)==0,]
 
 	# prob of occupancy for sites with presence at least in one of the surveys, and with no presence detected
-	psi.pres=psi[rowSums(y.pa)>=1,]
-	psi.non.pres=psi[rowSums(y.pa)==0,]
+	psi.pres=psi[rowSums(y.so)>=1,]
+	psi.non.pres=psi[rowSums(y.so)==0,]
 
 
-	#If there is only one site with no observed animals R automatically turns p.pa.non.pres in a vector while we need it in a form of a matrix with 1 row and J.pa (number of surveys rows) for the function rowProds to work
-	if (length(p.pa.non.pres)==J.pa) {dim(p.pa.non.pres)=c(1,J.pa)}
+	#If there is only one site with no observed animals R automatically turns p.so.non.pres in a vector while we need it in a form of a matrix with 1 row and J.so (number of surveys rows) for the function rowProds to work
+	if (length(p.so.non.pres)==J.so) {dim(p.so.non.pres)=c(1,J.so)}
 
-	pa.pres=sum(log(psi.pres)+rowSums(y.pa.pres*log(p.pa.pres)+(1-y.pa.pres)*log(1-p.pa.pres)))
+	so.pres=sum(log(psi.pres)+rowSums(y.so.pres*log(p.so.pres)+(1-y.so.pres)*log(1-p.so.pres)))
 
 
-	pa.non.pres=0
+	so.non.pres=0
 	if (!is.null(psi.non.pres))	{
-		pa.non.pres=sum(log(psi.non.pres*rowProds(1-p.pa.non.pres)+1-psi.non.pres))
+		so.non.pres=sum(log(psi.non.pres*rowProds(1-p.so.non.pres)+1-psi.non.pres))
 	}
 
-	-(pa.pres+pa.non.pres)
+	-(so.pres+so.non.pres)
 
 }
 
 
 
-negLL.poANDpa = function(param,y.pa.pres,y.pa, X.po, W.po, X.back, W.back, X.pa, W.pa )  {
+negLL.pbso = function(param,y.so.pres,y.so, X.po, W.po, X.back, W.back, X.so, W.so )  {
 
 	param.po = param[1:(dim(X.po)[2]+dim(W.po)[2])]
-	param.pa = param[c(1:dim(X.po)[2], (dim(X.po)[2]+dim(W.po)[2]+1):(dim(X.po)[2]+dim(W.po)[2]+dim(W.pa)[3]))]
-	negLL.po(param.po, X.po, W.po,X.back, W.back ) + negLL.pa(param.pa,y.pa.pres,y.pa,X.pa,W.pa)
+	param.so = param[c(1:dim(X.po)[2], (dim(X.po)[2]+dim(W.po)[2]+1):(dim(X.po)[2]+dim(W.po)[2]+dim(W.so)[3]))]
+	negLL.po(param.po, X.po, W.po,X.back, W.back ) + negLL.so(param.so,y.so.pres,y.so,X.so,W.so)
 }
 
