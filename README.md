@@ -1,4 +1,4 @@
-## List of the R-files supplied with the paper: Koshkina et al. "Integrated Species Distribution Models: Combining presence-only data and presence-absence data with imperfect detection"
+## List of the R-files supplied with the paper: Koshkina et al. "Integrated species distribution models: combining presence-background data and site-occupancy data with imperfect detection"
 
 PBSO-function.r - Fitting PB, SO and Integrated models the data. The data required for the file is stored in the file data.rda and include
 
